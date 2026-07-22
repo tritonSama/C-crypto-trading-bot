@@ -1,0 +1,19 @@
+# Secrets / local runtime (never commit)
+creedbuilder/.env
+Setup/logs/
+*.log
+
+# Legacy path (delete local solana-bot/ after closing IDE tabs on those files)
+solana-bot/
+
+# Dependencies / build
+creedbuilder/node_modules/
+creedbuilder/dist/
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

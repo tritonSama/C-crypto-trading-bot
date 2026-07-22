@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Mario.Quote
+namespace CreedBuilder.Quote
 {
     class Request
     {

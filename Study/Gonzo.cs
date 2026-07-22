@@ -9,7 +9,7 @@ using Coinbase.Pro;
 using Coinbase.Pro.Models;
 using Skender.Stock.Indicators;
 
-namespace Mario.Study
+namespace CreedBuilder.Study
 {
     public static class Gonzo
     {

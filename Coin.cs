@@ -8,10 +8,10 @@ using System.Net.Http.Headers;
 
 using Coinbase.Pro;
 using Coinbase.Pro.Models;
-using Mario.Study;
-using Mario.Trade;
+using CreedBuilder.Study;
+using CreedBuilder.Trade;
 
-namespace Mario
+namespace CreedBuilder
 {
     public class Coin
     {

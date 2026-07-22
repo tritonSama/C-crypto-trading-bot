@@ -1,62 +1,80 @@
-# mario
-Automated trading of crypto with Coinbase Pro using C# utilizing technical analysis.
-<br/><br/>
-The source code can be adapted to work with equities (stocks), forex, commodities, or any markets where price/volume instruments can be gauged.
+# creedBuilder
 
-Warning
-=======
+Automated **Solana** trading driven by **TradingView Pine Script** alerts, executed through **[Jupiter](https://jup.ag)**.
 
-THIS IS A PROOF OF CONCEPT.<br/>
-THIS IS NOT PRODUCTION QUALITY CODE.<br/>
-TAKE THE KEY ASPECTS OF THE LOGIC AND CODE IT THE "RIGHT" WAY (CODING IT IN RUST INSTEAD OF C#).
-<br/>
-<br/>
-TRADING IN CRYPTOCURRENCY INVOLVES A LOT OF RISKS.<br/>
-KNOW WHAT YOU'RE DOING OR YOU'RE GOING TO END UP LOSING EVERYTHING.<br/>
-I GURANTEE IT.
-<br/>
-<br/>
-I (THE AUTHOR OF THIS WORK) TAKE NO RESPONSBILITY OF WHAT HAPPENS TO YOU OR YOUR TRADING ACCOUNT(S) IF YOU USE ANY ASPECT OF THIS WORK.
-<br/>
-<br/>
-THE SOURCE CODE AVAILABLE IN THIS PROJECT IS ONLY FOR EDUCATIONAL STUDY.
-<br/>
-<br/>
-TRADING PURELY ON TECHNICAL ANALYSIS ALSO CARRY RISKS AS THERE ARE "FALSE SIGNALS" (I.E. BEAR/BULL TRAPS)
+> Educational proof of concept only. You can lose money. You own your keys, funds, and alert setup.
 
-Requirements
-============
+## Clone & install (Windows)
 
-1. Coinbase Pro account with API credentials
-2. MongoDB 5.x
-3. Microsoft .NET 6.0
+```powershell
+git clone https://github.com/tritonSama/creedBuilder.git
+cd creedBuilder
+.\Install.cmd
+.\Start.cmd
+```
 
-Optional
-=======================
+That is the full path: clone → install deps/wallet → start bot + public webhook tunnel.
 
-1. Microsoft Visual Studio
-2. MongoDB Compass
+| Step | What it does |
+| --- | --- |
+| `Install.cmd` | Node.js (if needed), cloudflared, `npm install`, build, creates `creedbuilder/.env` + wallet (`DRY_RUN=true`) |
+| `Start.cmd` | Runs the webhook bot and prints a `https://….trycloudflare.com/webhook` URL for TradingView |
 
-Project Dependencies
-===================================
-1. Coinbase.Pro
-2. MongoDB.Driver
-3. Newtonsoft.Json
-4. Skender.Stock.Indicators
-5. Tulip.NETCore
-6. WebSocketSharp-netstandard
+**Requirements:** Windows 10/11 with [Git](https://git-scm.com/download/win) and [winget](https://learn.microsoft.com/windows/package-manager/winget/) (App Installer).
 
-Setup
-===================================
-1. Create a MongoDB database and setup the collections from the folder - "MongoDB_Schema".
-2. Create a CLI (command line interface) project and add the source code from this project.
-3. Add the required project dependencies listed above into your project solution.
-4. Fill in the Coinbase Pro API key information inside the collection "0_app_settings".
-5. Program.cs is the entry point.
-<br/>
-YouTube discussing the critical parts:
-<br/>
-https://www.youtube.com/watch?v=kl9Kju9Hur0
-<hr/>
+## Clone & install (macOS / Linux)
 
-The project was built using Apple MacOS so there are OS specific calls that you will need to workaround (if you're on a different platform). An example, to trigger the audio sound when buying/selling a coin - the code utilizes the command line "afplay" which is MacOS specific. Windows/Linux systems can substitute with VLCPLayer command interface to mimic the same functionality.
+```bash
+git clone https://github.com/tritonSama/creedBuilder.git
+cd creedBuilder
+chmod +x install.sh start.sh
+./install.sh
+./start.sh
+```
+
+## After install → TradingView
+
+1. Paste [`pine/CreedBuilderSignal.pine`](pine/CreedBuilderSignal.pine) into the Pine Editor → Add to chart  
+2. Create **Buy** / **Sell** alerts  
+3. Webhook URL = URL printed by `Start.cmd` / `./start.sh`  
+4. Alert message (secret is in `creedbuilder/.env`):
+
+```json
+{"secret":"YOUR_WEBHOOK_SECRET","action":"buy"}
+```
+
+```json
+{"secret":"YOUR_WEBHOOK_SECRET","action":"sell"}
+```
+
+## Go live (careful)
+
+1. Fund the wallet address printed at install (backup `SOLANA_PRIVATE_KEY`)  
+2. Edit `creedbuilder/.env` (`TOKEN_MINT`, `BUY_AMOUNT_LAMPORTS`, …)  
+3. Set `DRY_RUN=false`  
+4. Restart with `Start.cmd` / `./start.sh`
+
+Optional: `JUPITER_API_KEY` for `api.jup.ag` (default uses free `lite-api.jup.ag`).
+
+## Layout
+
+```
+TradingView (Pine) → webhook → creedbuilder → Jupiter → Solana
+```
+
+| Path | Role |
+| --- | --- |
+| `pine/CreedBuilderSignal.pine` | Indicator + `alertcondition`s |
+| `creedbuilder/` | Webhook server + Jupiter swaps |
+| `Install.cmd` / `install.sh` | One-shot setup |
+| `Start.cmd` / `start.sh` | Run bot + tunnel |
+| Legacy `*.cs` | Old Coinbase Pro C# reference |
+
+## Manual bot commands
+
+```powershell
+cd creedbuilder
+npm install
+npm run build
+npm start
+```

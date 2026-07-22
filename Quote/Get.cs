@@ -10,10 +10,10 @@ using System.Reflection;
 using System.Web;
 using Newtonsoft.Json;
 using WebSocketSharp;
-using Mario.MongoDB;
-using Mario.Setup;
+using CreedBuilder.MongoDB;
+using CreedBuilder.Setup;
 
-namespace Mario.Quote
+namespace CreedBuilder.Quote
 {
     public static class Get
     {

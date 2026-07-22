@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Threading;
 
-namespace Mario
+namespace CreedBuilder
 {
     public static class Util
     {

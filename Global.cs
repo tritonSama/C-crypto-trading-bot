@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using Skender.Stock.Indicators;
 
-namespace Mario
+namespace CreedBuilder
 {
     public class Global
     {
@@ -22,7 +22,7 @@ namespace Mario
         public static MongoClient mongodb_client;
         public static IMongoDatabase mongodb_database;
 
-        public static string db_name = "mario_v1";
+        public static string db_name = "creedbuilder_v1";
         public static string db_app_settings = "0_app_settings";
         public static string db_trade_settings = "0_trade_settings";
         public static string db_trade_log = "0_trade_log";

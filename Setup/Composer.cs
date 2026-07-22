@@ -7,9 +7,9 @@ using System.IO;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Timers;
-using Mario.Workers;
+using CreedBuilder.Workers;
 
-namespace Mario.Setup
+namespace CreedBuilder.Setup
 {
     public static class Composer
     {

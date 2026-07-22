@@ -5,7 +5,7 @@ using System.ComponentModel;
 using Timer = System.Timers.Timer;
 using Skender.Stock.Indicators;
 
-namespace Mario.Trade
+namespace CreedBuilder.Trade
 {
     public static class Broker
     {

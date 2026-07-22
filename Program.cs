@@ -6,12 +6,12 @@ using MongoDB.Driver;
 using MongoDB.Bson;
 using Coinbase.Pro;
 
-using Mario;
-using Mario.Setup;
-using Mario.Study;
-using Mario.Trade;
+using CreedBuilder;
+using CreedBuilder.Setup;
+using CreedBuilder.Study;
+using CreedBuilder.Trade;
 
-namespace Mario
+namespace CreedBuilder
 {
     class Program
     {
@@ -91,7 +91,7 @@ namespace Mario
                     Composer.load();
                     Composer.start_trade();
                     Composer.db_cleanse();
-                    Mario.Quote.Get.run();
+                    CreedBuilder.Quote.Get.run();
                     break;
                 case "wipe":
                     preflight(args[1]);

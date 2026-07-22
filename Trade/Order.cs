@@ -8,7 +8,7 @@ using System.Net.Http.Headers;
 using Coinbase.Pro;
 using Coinbase.Pro.Models;
 
-namespace Mario.Trade
+namespace CreedBuilder.Trade
 {
     public static class Order
     {

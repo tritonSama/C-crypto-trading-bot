@@ -1,50 +1,31 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Installs Mario trading-bot prerequisites on Windows via winget.
+  One-click install for creedBuilder TradingView → Jupiter (Solana) bot.
 
 .DESCRIPTION
-  Installs:
-    - .NET 6 SDK
-    - MongoDB Server (+ Shell)
-    - Optionally MongoDB Compass
-
-  Then creates database mario_v1 and seeds collections from MongoDB_Schema/
-  if they are empty.
-
-  Coinbase API credentials cannot be installed automatically — fill them in
-  MongoDB collection 0_app_settings after this script finishes.
+  Installs Node.js (if needed), cloudflared, npm deps, generates wallet + webhook
+  secret, writes creedbuilder/.env, and builds the bot.
 
 .EXAMPLE
-  # From an elevated PowerShell:
-  Set-ExecutionPolicy -Scope Process Bypass
+  Right-click Install.cmd → Run as administrator
+  or:
   .\Setup\Install-Prerequisites.ps1
-
-.EXAMPLE
-  .\Setup\Install-Prerequisites.ps1 -IncludeOptional -SkipMongoSeed
 #>
 [CmdletBinding()]
 param(
-    [switch]$IncludeOptional,
-    [switch]$SkipDotNet,
-    [switch]$SkipMongo,
-    [switch]$SkipMongoSeed,
-    [string]$MongoDbUrl = "mongodb://127.0.0.1:27017",
-    [string]$DatabaseName = "mario_v1"
+    [switch]$SkipNode,
+    [switch]$SkipCloudflared
 )
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$SchemaDir = Join-Path $RepoRoot "MongoDB_Schema"
+$BotDir = Join-Path $RepoRoot "creedbuilder"
+$EnvFile = Join-Path $BotDir ".env"
+$EnvExample = Join-Path $BotDir ".env.example"
 
 function Write-Step([string]$Message) {
     Write-Host "`n==> $Message" -ForegroundColor Cyan
-}
-
-function Test-IsAdmin {
-    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
-    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
 function Refresh-Path {
@@ -59,23 +40,17 @@ function Test-Command([string]$Name) {
 
 function Ensure-Winget {
     if (-not (Test-Command "winget")) {
-        throw "winget not found. Install 'App Installer' from the Microsoft Store, then re-run."
+        throw "winget not found. Install 'App Installer' from the Microsoft Store, then re-run Install.cmd."
     }
 }
 
-function Install-WingetPackage {
-    param(
-        [Parameter(Mandatory)][string]$Id,
-        [Parameter(Mandatory)][string]$DisplayName
-    )
-
+function Install-WingetPackage([string]$Id, [string]$DisplayName) {
     Write-Step "Installing $DisplayName ($Id)"
     $existing = winget list --id $Id --accept-source-agreements 2>$null
     if ($LASTEXITCODE -eq 0 -and ($existing | Select-String -SimpleMatch $Id)) {
         Write-Host "Already installed: $DisplayName"
         return
     }
-
     winget install --id $Id -e --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -ne 0) {
         throw "winget failed installing $Id (exit $LASTEXITCODE)"
@@ -83,160 +58,151 @@ function Install-WingetPackage {
     Refresh-Path
 }
 
-function Wait-ForMongo {
-    param([int]$TimeoutSeconds = 90)
-
-    Write-Step "Waiting for MongoDB on $MongoDbUrl"
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    while ((Get-Date) -lt $deadline) {
-        try {
-            if (Test-Command "mongosh") {
-                & mongosh $MongoDbUrl --quiet --eval "db.runCommand({ ping: 1 })" 2>$null | Out-Null
-                if ($LASTEXITCODE -eq 0) { return }
-            }
-        } catch { }
-        Start-Sleep -Seconds 3
-    }
-    throw "MongoDB did not become ready within ${TimeoutSeconds}s. Start the MongoDB Windows service and retry with -SkipDotNet -SkipMongo."
+function New-Secret([int]$Bytes = 24) {
+    $buffer = New-Object byte[] $Bytes
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($buffer)
+    return ([Convert]::ToBase64String($buffer) -replace '[^a-zA-Z0-9]', 'x')
 }
 
-function Ensure-MongoService {
-    $svc = Get-Service -Name "MongoDB" -ErrorAction SilentlyContinue
-    if (-not $svc) {
-        Write-Host "MongoDB Windows service not found yet (installer may still be finishing)."
-        return
+function Set-EnvValue([string]$Content, [string]$Key, [string]$Value) {
+    $line = "$Key=$Value"
+    if ($Content -match "(?m)^$Key=") {
+        return [regex]::Replace($Content, "(?m)^$Key=.*$", [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $line })
     }
-    if ($svc.Status -ne "Running") {
-        Write-Step "Starting MongoDB service"
-        Start-Service MongoDB
-    }
+    return ($Content.TrimEnd() + "`r`n$line`r`n")
 }
 
-function Seed-MongoCollections {
-    if (-not (Test-Command "mongosh")) {
-        throw "mongosh not found on PATH. Install MongoDB.Shell, open a new terminal, and re-run with -SkipDotNet -SkipMongo."
-    }
-
-    Wait-ForMongo
-
-    $appSettingsPath = Join-Path $SchemaDir "0_app_settings.json"
-    $tradeSettingsPath = Join-Path $SchemaDir "0_trade_settings.json"
-    if (-not (Test-Path $appSettingsPath) -or -not (Test-Path $tradeSettingsPath)) {
-        throw "Schema files missing under $SchemaDir"
-    }
-
-    # Strip extended JSON wrappers so inserts work with plain mongosh.
-    $appDoc = Get-Content $appSettingsPath -Raw | ConvertFrom-Json | Select-Object -First 1
-    $tradeDoc = Get-Content $tradeSettingsPath -Raw | ConvertFrom-Json | Select-Object -First 1
-
-    $appPayload = @{
-        api_key    = [string]$appDoc.api_key
-        passphrase = [string]$appDoc.passphrase
-        secret     = [string]$appDoc.secret
-    } | ConvertTo-Json -Compress
-
-    $tradePayload = @{
-        locked                  = [bool]$tradeDoc.locked
-        symbol                  = [string]$tradeDoc.symbol
-        chain_id                = [string]$tradeDoc.chain_id
-        total_cash_to_play      = [string]$tradeDoc.total_cash_to_play.'$numberDecimal'
-        cash_per_trade          = [string]$tradeDoc.cash_per_trade.'$numberDecimal'
-        ta_history_period       = [int]$tradeDoc.ta_history_period
-        wait_buy_to_average_min = [int]$tradeDoc.wait_buy_to_average_min
-        wait_buy_to_average_max = [int]$tradeDoc.wait_buy_to_average_max
-        duration_candle         = [string]$tradeDoc.duration_candle
-    } | ConvertTo-Json -Compress
-
-    $js = @"
-const dbName = '$DatabaseName';
-const dbx = db.getSiblingDB(dbName);
-['0_app_settings','0_trade_settings','0_trade_log'].forEach(c => {
-  if (!dbx.getCollectionNames().includes(c)) dbx.createCollection(c);
-});
-if (dbx.getCollection('0_app_settings').countDocuments({}) === 0) {
-  const doc = $appPayload;
-  dbx.getCollection('0_app_settings').insertOne(doc);
-  print('Seeded 0_app_settings');
-} else {
-  print('0_app_settings already has data — skipped');
-}
-if (dbx.getCollection('0_trade_settings').countDocuments({}) === 0) {
-  const raw = $tradePayload;
-  const doc = Object.assign({}, raw, {
-    total_cash_to_play: NumberDecimal(raw.total_cash_to_play),
-    cash_per_trade: NumberDecimal(raw.cash_per_trade)
-  });
-  dbx.getCollection('0_trade_settings').insertOne(doc);
-  print('Seeded 0_trade_settings');
-} else {
-  print('0_trade_settings already has data — skipped');
-}
-print('Mongo setup complete for ' + dbName);
-"@
-
-    $tmp = Join-Path $env:TEMP "mario-mongo-seed.js"
-    Set-Content -Path $tmp -Value $js -Encoding UTF8
-    Write-Step "Seeding MongoDB database '$DatabaseName'"
-    & mongosh $MongoDbUrl --quiet --file $tmp
-    if ($LASTEXITCODE -ne 0) {
-        throw "mongosh seed script failed (exit $LASTEXITCODE)"
-    }
-    Remove-Item $tmp -ErrorAction SilentlyContinue
-}
-
-# --- main ---
-Write-Host "Mario prerequisite installer" -ForegroundColor Green
+Write-Host "creedBuilder one-click installer (TradingView + Jupiter / Solana)" -ForegroundColor Green
 Write-Host "Repo: $RepoRoot"
 
-if (-not (Test-IsAdmin)) {
-    $adminWarn = @"
-
-This script should be run in an elevated PowerShell (Run as administrator)
-so MongoDB can install/start its Windows service.
-"@
-    Write-Host $adminWarn -ForegroundColor Yellow
+if (-not (Test-Path $BotDir)) {
+    throw "Missing creedbuilder folder at $BotDir"
 }
 
 Ensure-Winget
 
-if (-not $SkipDotNet) {
-    Install-WingetPackage -Id "Microsoft.DotNet.SDK.6" -DisplayName ".NET 6 SDK"
+if (-not $SkipNode) {
     Refresh-Path
-    if (Test-Command "dotnet") {
-        Write-Host "dotnet: $(dotnet --version)"
-    } else {
-        Write-Host "dotnet installed but not on PATH yet - open a new terminal." -ForegroundColor Yellow
+    $needNode = $true
+    if (Test-Command "node") {
+        $major = [int]((node -v) -replace '^v', '' -split '\.')[0]
+        if ($major -ge 20) {
+            Write-Host "Node.js already OK: $(node -v)"
+            $needNode = $false
+        }
+    }
+    if ($needNode) {
+        Install-WingetPackage -Id "OpenJS.NodeJS.LTS" -DisplayName "Node.js LTS"
+        Refresh-Path
     }
 }
 
-if (-not $SkipMongo) {
-    # README asks for 5.x; winget currently ships newer server builds which work for this POC.
-    Install-WingetPackage -Id "MongoDB.Server" -DisplayName "MongoDB Server"
-    Install-WingetPackage -Id "MongoDB.Shell" -DisplayName "MongoDB Shell (mongosh)"
-    Ensure-MongoService
-}
-
-if ($IncludeOptional) {
-    Install-WingetPackage -Id "MongoDB.Compass.Full" -DisplayName "MongoDB Compass"
-}
-
-if (-not $SkipMongoSeed) {
+if (-not $SkipCloudflared) {
+    Install-WingetPackage -Id "Cloudflare.cloudflared" -DisplayName "cloudflared (TradingView webhook tunnel)"
     Refresh-Path
-    Seed-MongoCollections
 }
 
-$doneMsg = @"
+if (-not (Test-Command "node") -or -not (Test-Command "npm")) {
+    throw "Node/npm still not on PATH. Close this window and re-run Install.cmd."
+}
 
-Done.
+Write-Step "Installing npm packages"
+Push-Location $BotDir
+try {
+    npm install
+    if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
 
-Next (manual - cannot be automated):
-  1. Create Coinbase Pro / Advanced Trade API credentials.
-  2. Put api_key, secret, passphrase into $DatabaseName.0_app_settings
-  3. Set symbol / cash fields in $DatabaseName.0_trade_settings
-  4. Create a .NET 6 console app, add this source + NuGet packages, then:
-       dotnet run -- run STAGING
+    Write-Step "Building TypeScript"
+    npm run build
+    if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
+}
+finally {
+    Pop-Location
+}
 
-Re-run seed only:
-  .\Setup\Install-Prerequisites.ps1 -SkipDotNet -SkipMongo
+Write-Step "Writing creedbuilder/.env"
+$legacyEnv = Join-Path $RepoRoot "solana-bot\.env"
+if (-not (Test-Path $EnvFile) -and (Test-Path $legacyEnv)) {
+    Copy-Item $legacyEnv $EnvFile
+    Write-Host "Migrated .env from solana-bot/ → creedbuilder/"
+}
+if (-not (Test-Path $EnvFile)) {
+    Copy-Item $EnvExample $EnvFile
+}
+
+$envText = Get-Content $EnvFile -Raw
+$secretMatch = [regex]::Match($envText, '(?m)^WEBHOOK_SECRET=(.*)$')
+$currentSecret = if ($secretMatch.Success) { $secretMatch.Groups[1].Value.Trim() } else { "" }
+if (-not $currentSecret -or $currentSecret -eq "change-me") {
+    $envText = Set-EnvValue $envText "WEBHOOK_SECRET" (New-Secret)
+}
+
+$keyMatch = [regex]::Match($envText, '(?m)^SOLANA_PRIVATE_KEY=(.*)$')
+$currentKey = if ($keyMatch.Success) { $keyMatch.Groups[1].Value.Trim() } else { "" }
+$publicKey = ""
+if (-not $currentKey) {
+    Write-Step "Generating Solana wallet"
+    Push-Location $BotDir
+    try {
+        $walletJson = npm run -s gen-wallet | Out-String
+        $wallet = $walletJson | ConvertFrom-Json
+        $envText = Set-EnvValue $envText "SOLANA_PRIVATE_KEY" $wallet.privateKeyBase58
+        $publicKey = $wallet.publicKey
+    }
+    finally {
+        Pop-Location
+    }
+} else {
+    # derive pubkey for summary via node one-liner
+    Push-Location $BotDir
+    try {
+        $publicKey = node --input-type=module -e "import bs58 from 'bs58'; import {Keypair} from '@solana/web3.js'; const k=Keypair.fromSecretKey(bs58.decode(process.env.K)); console.log(k.publicKey.toBase58());" 2>$null
+    } catch { }
+    finally { Pop-Location }
+}
+
+# Keep safe defaults on first install
+$envText = Set-EnvValue $envText "DRY_RUN" "true"
+Set-Content -Path $EnvFile -Value $envText -Encoding UTF8
+
+# Re-read secret for user summary
+$envText = Get-Content $EnvFile -Raw
+$webhookSecret = ([regex]::Match($envText, '(?m)^WEBHOOK_SECRET=(.*)$')).Groups[1].Value.Trim()
+if (-not $publicKey) {
+    Push-Location $BotDir
+    try {
+        $env:K = ([regex]::Match($envText, '(?m)^SOLANA_PRIVATE_KEY=(.*)$')).Groups[1].Value.Trim()
+        $publicKey = node --input-type=module -e "import bs58 from 'bs58'; import {Keypair} from '@solana/web3.js'; const k=Keypair.fromSecretKey(bs58.decode(process.env.K)); console.log(k.publicKey.toBase58());"
+    }
+    finally {
+        Remove-Item Env:K -ErrorAction SilentlyContinue
+        Pop-Location
+    }
+}
+
+$pinePath = Join-Path $RepoRoot "pine\CreedBuilderSignal.pine"
+
+$done = @"
+
+Install complete.
+
+Wallet (fund with SOL on mainnet for live trades):
+  $publicKey
+
+DRY_RUN=true (quotes only). Set DRY_RUN=false in creedbuilder\.env for live Jupiter swaps.
+
+Next (one click start):
+  Double-click Start.cmd
+
+TradingView:
+  1. Open pine\CreedBuilderSignal.pine and paste into Pine Editor
+  2. Add to chart → Create alert (Buy and/or Sell)
+  3. Webhook URL from Start.cmd output: https://..../webhook
+  4. Alert message:
+     {`"secret`":`"$webhookSecret`",`"action`":`"buy`"}
+     or
+     {`"secret`":`"$webhookSecret`",`"action`":`"sell`"}
+
+Pine file: $pinePath
 "@
-Write-Host $doneMsg -ForegroundColor Green
+Write-Host $done -ForegroundColor Green
