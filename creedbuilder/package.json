@@ -5,9 +5,12 @@
   "description": "creedBuilder — TradingView webhook → Jupiter Solana swap executor",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
+    "build": "npm run build:server && npm run build:gui",
+    "build:server": "tsc -p tsconfig.json",
+    "build:gui": "vite build --config gui/vite.config.ts",
     "dev": "tsx src/index.ts",
+    "dev:gui": "vite --config gui/vite.config.ts",
+    "start": "node dist/index.js",
     "gen-wallet": "tsx src/gen-wallet.ts"
   },
   "engines": {
@@ -18,12 +21,15 @@
     "bs58": "^6.0.0",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "vue": "^3.5.17",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^22.16.5",
+    "@vitejs/plugin-vue": "^5.2.4",
     "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
   }
 }

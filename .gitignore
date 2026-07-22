@@ -9,6 +9,7 @@ solana-bot/
 # Dependencies / build
 creedbuilder/node_modules/
 creedbuilder/dist/
+creedbuilder/public/
 node_modules/
 
 # OS / editor

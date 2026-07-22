@@ -22,13 +22,46 @@ function Refresh-Path {
 Refresh-Path
 
 if (-not (Test-Path $EnvFile)) {
-    throw "Missing creedbuilder\.env — run Install.cmd first."
+    $legacyEnv = Join-Path $RepoRoot "solana-bot\.env"
+    if (Test-Path $legacyEnv) {
+        Copy-Item $legacyEnv $EnvFile
+        Write-Host "Migrated .env from solana-bot to creedbuilder"
+    } else {
+        throw "Missing creedbuilder\.env - run Install.cmd first."
+    }
+}
+
+if (-not (Test-Path (Join-Path $BotDir "dist\index.js")) -or -not (Test-Path (Join-Path $BotDir "public\index.html"))) {
+    Write-Host "Building creedbuilder (server + Vue GUI)..." -ForegroundColor Cyan
+    Push-Location $BotDir
+    try {
+        npm run build
+        if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
+    } finally {
+        Pop-Location
+    }
 }
 
 $portMatch = [regex]::Match((Get-Content $EnvFile -Raw), '(?m)^PORT=(.*)$')
 $port = if ($portMatch.Success -and $portMatch.Groups[1].Value.Trim()) { $portMatch.Groups[1].Value.Trim() } else { "8787" }
 
 $secret = ([regex]::Match((Get-Content $EnvFile -Raw), '(?m)^WEBHOOK_SECRET=(.*)$')).Groups[1].Value.Trim()
+
+function Clear-Port([int]$PortNumber) {
+    try {
+        $pids = Get-NetTCPConnection -LocalPort $PortNumber -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty OwningProcess -Unique
+        foreach ($procId in $pids) {
+            if ($procId -and $procId -ne 0) {
+                Write-Host ("Freeing port {0} (PID {1})" -f $PortNumber, $procId) -ForegroundColor Yellow
+                Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+            }
+        }
+    } catch { }
+    Start-Sleep -Seconds 1
+}
+
+Clear-Port ([int]$port)
 
 Write-Host "Starting creedBuilder on port $port ..." -ForegroundColor Cyan
 
@@ -54,7 +87,7 @@ if (-not (Get-Command cloudflared -ErrorAction SilentlyContinue)) {
 
 $tunnel = Start-Process -FilePath "cloudflared" `
     -ArgumentList @("tunnel", "--url", "http://127.0.0.1:$port", "--no-autoupdate") `
-    -RedirectStandardOutput $tunnelLog -RedirectStandardError $tunnelErr -PassThru -WindowStyle Hidden -NoNewWindow
+    -RedirectStandardOutput $tunnelLog -RedirectStandardError $tunnelErr -PassThru -WindowStyle Hidden
 
 $publicUrl = $null
 $deadline = (Get-Date).AddSeconds(45)
@@ -71,14 +104,16 @@ if (-not $publicUrl) {
     Write-Host "Tunnel started but URL not parsed yet. Check $tunnelErr" -ForegroundColor Yellow
 } else {
     $webhook = "$publicUrl/webhook"
+    $buyMsg = '{{"secret":"{0}","action":"buy"}}' -f $secret
+    $sellMsg = '{{"secret":"{0}","action":"sell"}}' -f $secret
     Write-Host ""
-    Write-Host "Bot PID: $($bot.Id)   Tunnel PID: $($tunnel.Id)" -ForegroundColor Green
-    Write-Host "Health:  $publicUrl/health"
-    Write-Host "Webhook: $webhook" -ForegroundColor Green
+    Write-Host ("Bot PID: {0}   Tunnel PID: {1}" -f $bot.Id, $tunnel.Id) -ForegroundColor Green
+    Write-Host ("Health:  {0}/health" -f $publicUrl)
+    Write-Host ("Webhook: {0}" -f $webhook) -ForegroundColor Green
     Write-Host ""
     Write-Host "TradingView alert messages:" -ForegroundColor Cyan
-    Write-Host "{`"secret`":`"$secret`",`"action`":`"buy`"}"
-    Write-Host "{`"secret`":`"$secret`",`"action`":`"sell`"}"
+    Write-Host $buyMsg
+    Write-Host $sellMsg
     Write-Host ""
     Write-Host "Press Ctrl+C to stop." -ForegroundColor Yellow
 

@@ -21,6 +21,16 @@ export function webhookRouter(): Router {
     });
   });
 
+  // Browsers use GET; TradingView alerts must POST JSON here.
+  router.get("/webhook", (_req, res) => {
+    res.status(200).json({
+      ok: true,
+      message: "Webhook is alive. TradingView must POST JSON, not GET.",
+      example: { secret: "YOUR_WEBHOOK_SECRET", action: "buy" },
+      dryRun: config.DRY_RUN,
+    });
+  });
+
   router.post("/webhook", async (req, res) => {
     try {
       const body =
