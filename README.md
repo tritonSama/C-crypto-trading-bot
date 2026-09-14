@@ -1,0 +1,2 @@
+# C-crypto-trading-bot
+
