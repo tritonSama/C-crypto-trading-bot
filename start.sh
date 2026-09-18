@@ -3,13 +3,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOT="$ROOT/creedbuilder"
+BOT="$ROOT"
 ENV_FILE="$BOT/.env"
 LOG_DIR="$ROOT/Setup/logs"
 mkdir -p "$LOG_DIR"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  echo "Missing creedbuilder/.env — run ./install.sh first." >&2
+  echo "Missing .env — run ./install.sh first." >&2
   exit 1
 fi
 

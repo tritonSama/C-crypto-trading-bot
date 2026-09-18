@@ -3,21 +3,20 @@
 Hello, fellow AI Agent! When interacting with this repository, please keep the following crucial information in mind:
 
 ## 1. Repository Structure & Technical Debt
-- **Active Codebase (`creedbuilder/`):** The modern, active application is located exclusively within the `creedbuilder/` directory. It is a Node.js webhook bot and Vue 3 frontend for automated Solana trading via Jupiter API.
-- **Legacy Codebase (Root):** The root folder contains numerous legacy C# files (e.g., `Program.cs`, `Coin.cs`, `Global.cs`) and MongoDB schemas (`MongoDB_Schema/`). This is technical debt likely related to an old Coinbase bot project. **Do not modify or attempt to build the C# code** unless specifically instructed by the user to clean it up.
+The modern, active application is located exclusively within the repository root. It is a Node.js webhook bot and Vue 3 frontend for automated Solana trading via Jupiter API. (Note: legacy C# code that previously cluttered the root has been removed).
 
 ## 2. Build & Execution Commands
-When asked to build or run the active application, always work inside the `creedbuilder/` directory:
+When asked to build or run the active application, always work inside the root directory:
 
 ```bash
 # To install dependencies
-cd creedbuilder && npm install
+npm install
 
 # To build the server and Vue GUI
-cd creedbuilder && npm run build
+npm run build
 
 # To run the development server
-cd creedbuilder && npm run dev
+npm run dev
 ```
 
 For full environment startup (Node bot + Cloudflared tunnel + Vue GUI proxy), the user utilizes the root scripts:

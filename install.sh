@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOT="$ROOT/creedbuilder"
+BOT="$ROOT"
 ENV_FILE="$BOT/.env"
 ENV_EXAMPLE="$BOT/.env.example"
 

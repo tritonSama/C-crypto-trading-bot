@@ -20,7 +20,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$BotDir = Join-Path $RepoRoot "creedbuilder"
+$BotDir = $RepoRoot
 $EnvFile = Join-Path $BotDir ".env"
 $EnvExample = Join-Path $BotDir ".env.example"
 

@@ -15,24 +15,19 @@ The application is composed of several moving parts:
    - Analyzes charts on TradingView and sends JSON alerts via a webhook POST request to the local application.
 
 2. **Node.js Webhook Server & API (Backend):**
-   - Built with Express.js (`creedbuilder/src/index.ts`).
+   - Built with Express.js (`src/index.ts`).
    - Handles incoming POST webhook requests from TradingView.
    - Hosts API endpoints for the Vue.js GUI.
-   - Interacts with the Solana blockchain via `@solana/web3.js` and Jupiter's Swap API (`creedbuilder/src/jupiter.ts`).
+   - Interacts with the Solana blockchain via `@solana/web3.js` and Jupiter's Swap API (`src/jupiter.ts`).
    - Uses `zod` for payload validation.
 
 3. **Vue 3 + Vite GUI (Frontend):**
-   - Located in `creedbuilder/gui/`.
+   - Located in `gui/`.
    - Provides a user interface (at `http://127.0.0.1:8787`) to manage configurations (saved in `.env`), view current status, generate wallets, test trades (Dry Run mode), and copy TradingView webhook parameters.
 
 4. **Cloudflared Tunnel:**
    - Started via `Start.cmd` / `start.sh`.
    - Exposes the local Node.js server securely to the internet, giving TradingView a public URL to POST alerts to.
-
-5. **Legacy C# Application (Technical Debt):**
-   - The root repository contains numerous C# files (e.g., `Program.cs`, `Coin.cs`, `Global.cs`, `Util.cs`, `Quote/`, `Setup/`, `Study/`, `Trade/`, `Workers/`).
-   - These files reference Coinbase Pro and MongoDB (`MongoDB_Schema/`) and appear to belong to an older version or entirely different concept (e.g., a Coinbase Pro C# bot).
-   - This legacy code is **not** actively used by the current TypeScript/Solana implementation.
 
 ## Application Flow
 
@@ -49,7 +44,7 @@ The application is composed of several moving parts:
 
 The Express server exposes the following key endpoints:
 
-### Webhook API (`creedbuilder/src/webhook.ts`)
+### Webhook API (`src/webhook.ts`)
 
 - **GET `/health`**: Returns basic status (dryRun state, tokenMint).
 - **GET `/webhook`**: Informs users that this endpoint requires a POST with JSON (used mostly as a manual health check).
@@ -59,7 +54,7 @@ The Express server exposes the following key endpoints:
   - Executes a trade (via `runTrade` in `jupiter.ts`).
   - Returns the transaction result (amounts, signature, dryRun status).
 
-### GUI API (`creedbuilder/src/gui-api.ts`)
+### GUI API (`src/gui-api.ts`)
 
 These are consumed by the Vue.js frontend:
 
@@ -75,11 +70,7 @@ These are consumed by the Vue.js frontend:
 
 The application works as a proof of concept, but several improvements should be made for stability and scalability:
 
-### 1. Technical Debt Cleanup (Crucial)
-- **Remove Legacy C# Code:** The root folder contains a significant amount of C# code (`*.cs` files, `MongoDB_Schema`, Coinbase references) that is entirely disconnected from the active Node.js Solana bot. This should be deleted to prevent confusion.
-- **Consolidate Structure:** Move the active application out of the nested `creedbuilder/` subdirectory into the root folder to simplify the project structure.
-
-### 2. Testing and CI/CD
+### 1. Testing and CI/CD
 - **Add Tests:** Implement automated tests (e.g., using Jest or Vitest) for the webhook routing, payload validation, and Jupiter API integration mocks.
 - **CI Pipelines:** Add GitHub Actions to automatically run builds and linters on pull requests.
 
