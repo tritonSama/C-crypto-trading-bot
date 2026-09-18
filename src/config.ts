@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { z } from "zod";
+import { getConfigValue, setConfigValue } from "./db.js";
 
 const boolFromEnv = z
   .string()
@@ -20,10 +21,32 @@ const schema = z.object({
   SLIPPAGE_BPS: z.coerce.number().int().positive().default(50),
 });
 
+// Seed environment with DB values
+const keys = [
+  "PORT", "WEBHOOK_SECRET", "DRY_RUN", "SOLANA_RPC_URL", "SOLANA_PRIVATE_KEY",
+  "JUPITER_API_KEY", "SOL_MINT", "TOKEN_MINT", "BUY_AMOUNT_LAMPORTS",
+  "SELL_PERCENT", "SLIPPAGE_BPS"
+];
+
+for (const key of keys) {
+  const dbValue = getConfigValue(key);
+  if (dbValue !== null) {
+    process.env[key] = dbValue;
+  }
+}
+
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
   console.error("Invalid configuration:", parsed.error.flatten().fieldErrors);
   process.exit(1);
+}
+
+// Initial populate of DB with parsed values (so we don't just rely on .env)
+for (const key of keys) {
+    const val = parsed.data[key as keyof typeof parsed.data];
+    if (val !== undefined && getConfigValue(key) === null) {
+      setConfigValue(key, String(val));
+    }
 }
 
 export const config = parsed.data;

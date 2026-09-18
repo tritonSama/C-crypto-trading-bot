@@ -4,13 +4,13 @@ import { fileURLToPath } from "url";
 import { Router } from "express";
 import { z } from "zod";
 import { config } from "./config.js";
+import { setConfigValue } from "./db.js";
 import { loadKeypair, runTrade } from "./jupiter.js";
 import { fetchSolanaNews, SOLANA_TOKENS } from "./solana-data.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const botRoot = path.join(__dirname, "..");
-const envPath = path.join(botRoot, ".env");
-const pinePath = path.join(botRoot, "..", "pine", "CreedBuilderSignal.pine");
+const pinePath = path.join(botRoot, "pine", "CreedBuilderSignal.pine");
 
 const editableSchema = z.object({
   DRY_RUN: z.boolean().optional(),
@@ -23,19 +23,12 @@ const editableSchema = z.object({
   WEBHOOK_SECRET: z.string().min(8).optional(),
 });
 
-function setEnvValue(content: string, key: string, value: string): string {
-  const line = `${key}=${value}`;
-  if (new RegExp(`^${key}=`, "m").test(content)) {
-    return content.replace(new RegExp(`^${key}=.*$`, "m"), line);
-  }
-  return `${content.trimEnd()}\n${line}\n`;
-}
-
 function applyRuntime(updates: Record<string, string | number | boolean>) {
   const runtime = config as unknown as Record<string, unknown>;
   for (const [key, value] of Object.entries(updates)) {
     process.env[key] = String(value);
     runtime[key] = value;
+    setConfigValue(key, String(value));
   }
 }
 
@@ -126,17 +119,14 @@ export function guiApiRouter(): Router {
       return;
     }
 
-    let envText = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
     const runtime: Record<string, string | number | boolean> = {};
 
     for (const [key, value] of Object.entries(parsed.data)) {
       if (value === undefined) continue;
       if (key === "JUPITER_API_KEY" && value === "(set)") continue;
-      envText = setEnvValue(envText, key, String(value));
       runtime[key] = value as string | number | boolean;
     }
 
-    fs.writeFileSync(envPath, envText, "utf8");
     applyRuntime(runtime);
     res.json({ ok: true, status: publicStatus() });
   });

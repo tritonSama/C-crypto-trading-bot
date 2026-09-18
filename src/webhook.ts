@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { config } from "./config.js";
+import { logTrade } from "./db.js";
 import { runTrade } from "./jupiter.js";
 
 const payloadSchema = z.object({
@@ -57,6 +58,13 @@ export function webhookRouter(): Router {
       busy = true;
       try {
         const result = await runTrade(parsed.data.action);
+        logTrade(
+          parsed.data.action,
+          result.dryRun,
+          result.quote.inAmount,
+          result.quote.outAmount,
+          result.signature ?? undefined
+        );
         res.json({
           ok: true,
           action: parsed.data.action,
@@ -72,6 +80,10 @@ export function webhookRouter(): Router {
       busy = false;
       const message = err instanceof Error ? err.message : String(err);
       console.error("[webhook]", message);
+
+      const actionStr = typeof req.body === "object" && req.body?.action ? String(req.body.action) : "unknown";
+      logTrade(actionStr, config.DRY_RUN, undefined, undefined, undefined, message);
+
       res.status(500).json({ error: message });
     }
   });
