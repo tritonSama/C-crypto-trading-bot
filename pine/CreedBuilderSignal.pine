@@ -26,6 +26,9 @@ plotshape(sellSignal, title="Sell", style=shape.labeldown, location=location.abo
 //     {"secret":"REPLACE_WITH_WEBHOOK_SECRET","action":"buy"}
 //   Message for SELL:
 //     {"secret":"REPLACE_WITH_WEBHOOK_SECRET","action":"sell"}
+//
+//   Optional: To override the global token and trade a specific one, add "tokenMint":
+//     {"secret":"REPLACE_WITH_WEBHOOK_SECRET","action":"buy","tokenMint":"YOUR_TOKEN_MINT_ADDRESS"}
 
 alertcondition(buySignal, title="creedBuilder Buy", message='{"secret":"REPLACE_WITH_WEBHOOK_SECRET","action":"buy"}')
 alertcondition(sellSignal, title="creedBuilder Sell", message='{"secret":"REPLACE_WITH_WEBHOOK_SECRET","action":"sell"}')

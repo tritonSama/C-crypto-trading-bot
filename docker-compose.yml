@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  bot:
+    build: .
+    container_name: creedbuilder_bot
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./creedbuilder.db:/app/creedbuilder.db
+      - ./.env:/app/.env
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: creedbuilder_tunnel
+    restart: unless-stopped
+    command: tunnel --url http://bot:8787 --no-autoupdate
+    depends_on:
+      - bot

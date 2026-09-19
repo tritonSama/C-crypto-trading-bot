@@ -138,7 +138,7 @@ export function guiApiRouter(): Router {
       return;
     }
     try {
-      const result = await runTrade(action);
+      const result = await runTrade(action, undefined);
       res.json({
         ok: true,
         action,

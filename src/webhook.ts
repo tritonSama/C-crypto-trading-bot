@@ -7,6 +7,7 @@ import { runTrade } from "./jupiter.js";
 const payloadSchema = z.object({
   secret: z.string().min(1),
   action: z.enum(["buy", "sell", "BUY", "SELL"]).transform((a) => a.toLowerCase() as "buy" | "sell"),
+  tokenMint: z.string().min(32).optional(),
 });
 
 let busy = false;
@@ -57,7 +58,7 @@ export function webhookRouter(): Router {
 
       busy = true;
       try {
-        const result = await runTrade(parsed.data.action);
+        const result = await runTrade(parsed.data.action, parsed.data.tokenMint);
         logTrade(
           parsed.data.action,
           result.dryRun,

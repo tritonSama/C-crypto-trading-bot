@@ -110,24 +110,26 @@ export async function getTokenRawBalance(
   return Number(amount);
 }
 
-export async function runTrade(action: "buy" | "sell"): Promise<{
+export async function runTrade(action: "buy" | "sell", overrideTokenMint?: string): Promise<{
   dryRun: boolean;
   quote: QuoteResponse;
   signature?: string;
 }> {
   const wallet = loadKeypair();
+  const tokenMint = overrideTokenMint || config.TOKEN_MINT;
+
   let inputMint: string;
   let outputMint: string;
   let amount: number;
 
   if (action === "buy") {
     inputMint = config.SOL_MINT;
-    outputMint = config.TOKEN_MINT;
+    outputMint = tokenMint;
     amount = config.BUY_AMOUNT_LAMPORTS;
   } else {
-    inputMint = config.TOKEN_MINT;
+    inputMint = tokenMint;
     outputMint = config.SOL_MINT;
-    const bal = await getTokenRawBalance(wallet.publicKey, config.TOKEN_MINT);
+    const bal = await getTokenRawBalance(wallet.publicKey, tokenMint);
     amount = Math.floor((bal * config.SELL_PERCENT) / 100);
     if (amount <= 0) {
       throw new Error("No TOKEN balance to sell");

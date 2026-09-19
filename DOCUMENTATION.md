@@ -80,5 +80,14 @@ The application works as a proof of concept, but several improvements should be 
 - **Advanced Strategy Config:** Add UI controls for dynamic stop-loss, take-profit, or trailing stops.
 
 ### 4. Infrastructure & Deployment
-- **Dockerization:** Provide a `Dockerfile` and `docker-compose.yml` to run the bot, GUI, and Cloudflared tunnel seamlessly in isolated containers, replacing the platform-specific `.cmd` and `.sh` scripts.
 - **WebSocket/RPC Resilience:** Implement connection retries and fallback RPC URLs for the Solana connection to handle network congestion.
+
+## Docker Deployment
+The application is fully Dockerized. To run the bot and the Cloudflared tunnel using Docker Compose, run:
+```bash
+docker compose up -d
+```
+Check the `cloudflared` container logs to find your public `.trycloudflare.com` URL:
+```bash
+docker compose logs cloudflared
+```
