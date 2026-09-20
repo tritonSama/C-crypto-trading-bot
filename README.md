@@ -98,3 +98,19 @@ npm run dev:gui      # Vite GUI on :5173 (proxies /api)
 - Windows 10/11 with [Git](https://git-scm.com/download/win) + [winget](https://learn.microsoft.com/windows/package-manager/winget/), or macOS/Linux with Node 20+  
 - TradingView account (for alerts)  
 - SOL in the bot wallet only when leaving dry-run
+
+## Development Phases
+
+This project is being developed in stages to ensure stability, scalability, and code cleanliness. Future AI agents or developers should follow this phased approach:
+
+### Phase 1: Technical Debt Cleanup & Restructuring
+Focuses on removing all legacy C# files and consolidating the modern Node.js/Vue app into the root directory to streamline development.
+
+### Phase 2: Infrastructure & Deployment Modernization
+Focuses on creating a robust deployment environment. This includes fully Dockerizing the application (bot, GUI, and Cloudflared tunnel) and setting up CI/CD pipelines via GitHub Actions.
+
+### Phase 3: State Management & Testing
+Focuses on migrating away from `.env` file mutation for application state, instead integrating a local database (like SQLite). It also includes establishing automated testing coverage using Vitest.
+
+### Phase 4: Advanced Trading Features
+Focuses on expanding the trading capabilities, such as adding multi-token support via dynamic webhook overrides, implementing advanced strategy logic (e.g., stop-losses, take-profits), and enhancing Solana RPC resilience.
