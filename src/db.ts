@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "..", "creedbuilder.db");
 
-export const db = new Database(dbPath);
+export const db = new Database(process.env.NODE_ENV === "test" ? ":memory:" : dbPath);
 db.pragma("journal_mode = WAL");
 
 // Initialize tables
@@ -48,4 +48,8 @@ export function logTrade(action: string, dryRun: boolean, inAmount?: string, out
     signature ?? null,
     error ?? null
   );
+}
+
+export function getTradeLogs(limit: number = 50) {
+  return db.prepare("SELECT * FROM trade_logs ORDER BY timestamp DESC LIMIT ?").all(limit);
 }

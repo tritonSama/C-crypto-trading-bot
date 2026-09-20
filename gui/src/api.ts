@@ -36,6 +36,17 @@ export type NewsItem = {
   categories: string;
 };
 
+export type TradeLog = {
+  id: number;
+  timestamp: string;
+  action: string;
+  dry_run: number;
+  in_amount: string | null;
+  out_amount: string | null;
+  signature: string | null;
+  error: string | null;
+};
+
 async function parseJson(res: Response) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -82,4 +93,9 @@ export async function testTrade(action: "buy" | "sell") {
       body: JSON.stringify({ action }),
     })
   );
+}
+
+export async function fetchLogs(): Promise<TradeLog[]> {
+  const data = (await parseJson(await fetch("/api/logs"))) as { logs: TradeLog[] };
+  return data.logs ?? [];
 }

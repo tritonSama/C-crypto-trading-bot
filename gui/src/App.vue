@@ -5,17 +5,20 @@ import {
   fetchPine,
   fetchStatus,
   fetchTokens,
+  fetchLogs,
   saveConfig,
   testTrade,
   type NewsItem,
   type SolanaToken,
   type Status,
+  type TradeLog,
 } from "./api";
 import TvChart from "./TvChart.vue";
 
 const status = ref<Status | null>(null);
 const tokens = ref<SolanaToken[]>([]);
 const news = ref<NewsItem[]>([]);
+const tradeLogs = ref<TradeLog[]>([]);
 const selected = ref<SolanaToken | null>(null);
 const result = ref("");
 const saveMsg = ref("");
@@ -56,6 +59,7 @@ async function refresh() {
   loading.value = true;
   try {
     applyStatus(await fetchStatus());
+    tradeLogs.value = await fetchLogs();
   } catch (err) {
     result.value = err instanceof Error ? err.message : String(err);
   } finally {
@@ -241,6 +245,37 @@ onMounted(async () => {
         <button type="button" class="btn danger" @click="onTest('sell')">Sell (token → SOL)</button>
       </div>
       <pre v-if="result" class="result">{{ result }}</pre>
+    </section>
+
+    <section class="panel wide">
+      <h2>Trade logs</h2>
+      <div v-if="tradeLogs.length === 0" class="hint">No trades logged yet.</div>
+      <table v-else class="logs-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Action</th>
+            <th>Mode</th>
+            <th>Input</th>
+            <th>Output</th>
+            <th>Signature / Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="log in tradeLogs" :key="log.id">
+            <td>{{ formatTime(log.timestamp) }}</td>
+            <td :class="log.action === 'buy' ? 'text-green' : 'text-red'">{{ log.action.toUpperCase() }}</td>
+            <td>{{ log.dry_run ? 'DRY' : 'LIVE' }}</td>
+            <td>{{ log.in_amount || '-' }}</td>
+            <td>{{ log.out_amount || '-' }}</td>
+            <td class="logs-detail">
+              <span v-if="log.error" class="text-red">{{ log.error }}</span>
+              <a v-else-if="log.signature" :href="`https://solscan.io/tx/${log.signature}`" target="_blank">{{ log.signature.slice(0, 8) }}...</a>
+              <span v-else class="hint">simulated</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section class="panel wide">

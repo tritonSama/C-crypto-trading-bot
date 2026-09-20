@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { Router } from "express";
 import { z } from "zod";
 import { config } from "./config.js";
-import { setConfigValue } from "./db.js";
+import { setConfigValue, getTradeLogs } from "./db.js";
 import { loadKeypair, runTrade } from "./jupiter.js";
 import { fetchSolanaNews, SOLANA_TOKENS } from "./solana-data.js";
 
@@ -110,6 +110,16 @@ export function guiApiRouter(): Router {
       JUPITER_API_KEY: config.JUPITER_API_KEY ? "(set)" : "",
       WEBHOOK_SECRET: config.WEBHOOK_SECRET,
     });
+  });
+
+  router.get("/api/logs", (_req, res) => {
+    try {
+      const logs = getTradeLogs(50);
+      res.json({ logs });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ error: message });
+    }
   });
 
   router.post("/api/config", (req, res) => {

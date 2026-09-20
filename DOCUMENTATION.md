@@ -40,6 +40,15 @@ The application is composed of several moving parts:
 7. If `DRY_RUN` is false, it requests a quote from Jupiter API and signs/sends a transaction on the Solana network. If `DRY_RUN` is true, it merely simulates the request.
 8. The server responds to the webhook with the transaction signature (or simulation result).
 
+## Features
+
+- **Automated Trading:** Jupiter Swap API integration for zero-slippage automated routing.
+- **Dry-Run Mode:** Test alert payloads and view simulated swap amounts without spending real funds.
+- **Dockerization:** Fully isolated containerized deployment using Docker Compose.
+- **Database Integration:** SQLite integration (`better-sqlite3`) to securely store runtime configuration and log all webhook trade history.
+- **Multi-Token Support:** Trade dozens of tokens from the same bot by overriding the target mint directly inside the TradingView alert JSON payload.
+- **Automated Testing:** Core logic components are unit tested via Vitest with GitHub Actions CI support.
+
 ## API Endpoints
 
 The Express server exposes the following key endpoints:
@@ -68,19 +77,14 @@ These are consumed by the Vue.js frontend:
 
 ## Next Steps & Recommendations
 
-The application works as a proof of concept, but several improvements should be made for stability and scalability:
+The application has a robust core, but the following improvements could enhance its capabilities:
 
-### 1. Testing and CI/CD
-- **Add Tests:** Implement automated tests (e.g., using Jest or Vitest) for the webhook routing, payload validation, and Jupiter API integration mocks.
-- **CI Pipelines:** Add GitHub Actions to automatically run builds and linters on pull requests.
-
-### 3. Feature Additions
-- **Database Integration:** Move from `.env` file configuration (which gets mutated by the GUI) to a lightweight local database (like SQLite or a JSON document store like lowdb) to store trade history, logs, and configurations safely.
-- **Multi-Token Support:** The current implementation seems geared towards a single selected token at a time. Expanding it to handle an array of tokens mapped to different TradingView alerts would be powerful.
-- **Advanced Strategy Config:** Add UI controls for dynamic stop-loss, take-profit, or trailing stops.
-
-### 4. Infrastructure & Deployment
+### 1. Advanced Trading Features
+- **Advanced Strategy Config:** Add UI controls and logic for dynamic stop-loss, take-profit, or trailing stops, possibly utilizing Jupiter Limit Orders instead of market swaps.
 - **WebSocket/RPC Resilience:** Implement connection retries and fallback RPC URLs for the Solana connection to handle network congestion.
+
+### 2. Notifications
+- **Discord/Telegram Alerts:** Send a message to a Discord webhook or a Telegram bot whenever a trade successfully executes or encounters an error.
 
 ## Docker Deployment
 The application is fully Dockerized. To run the bot and the Cloudflared tunnel using Docker Compose, run:
