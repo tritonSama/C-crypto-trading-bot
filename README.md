@@ -19,7 +19,7 @@ cd creedBuilder
 .\Install.cmd
 ```
 
-This installs Node.js (if needed), cloudflared, npm packages, builds the **server + Vue GUI**, and creates `creedbuilder/.env` with a wallet (`DRY_RUN=true`).
+This installs Node.js (if needed), cloudflared, npm packages, builds the **server + Vue GUI**, and creates `.env` with a wallet (`DRY_RUN=true`).
 
 ### 3. Start
 
@@ -78,16 +78,15 @@ creedBuilder (Node + Vue GUI on :8787)
 
 | Path | Role |
 | --- | --- |
-| `creedbuilder/gui/` | Vue 3 + Vite source |
-| `creedbuilder/public/` | Built GUI (from `npm run build`) |
+| `gui/` | Vue 3 + Vite source |
+| `public/` | Built GUI (from `npm run build`) |
 | `pine/CreedBuilderSignal.pine` | TradingView indicator |
 | `Install.cmd` / `install.sh` | One-shot setup |
 | `Start.cmd` / `start.sh` | Bot + tunnel + GUI |
 
 ## Dev (optional)
 
-```powershell
-cd creedbuilder
+```bash
 npm run build:server
 npm run dev          # API on :8787
 npm run dev:gui      # Vite GUI on :5173 (proxies /api)

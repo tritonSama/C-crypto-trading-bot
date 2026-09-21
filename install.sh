@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOT="$ROOT/creedbuilder"
+BOT="$ROOT"
 ENV_FILE="$BOT/.env"
 ENV_EXAMPLE="$BOT/.env.example"
 
@@ -117,7 +117,7 @@ Install complete.
 Wallet (fund with SOL for live trades):
   $pubkey
 
-DRY_RUN=true (quotes only). Edit creedbuilder/.env to go live.
+DRY_RUN=true (quotes only). Edit .env to go live.
 
 Next:
   ./start.sh

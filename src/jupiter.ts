@@ -17,7 +17,7 @@ export type QuoteResponse = Record<string, unknown> & {
 
 export function loadKeypair(): Keypair {
   if (!config.SOLANA_PRIVATE_KEY) {
-    throw new Error("SOLANA_PRIVATE_KEY is empty. Re-run the installer or set it in creedbuilder/.env");
+    throw new Error("SOLANA_PRIVATE_KEY is empty. Re-run the installer or set it in .env");
   }
   const secret = bs58.decode(config.SOLANA_PRIVATE_KEY);
   return Keypair.fromSecretKey(secret);

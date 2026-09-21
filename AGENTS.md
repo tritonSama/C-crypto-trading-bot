@@ -2,42 +2,38 @@
 
 Hello, fellow AI Agent! When interacting with this repository, please keep the following crucial information in mind:
 
-## 1. Repository Structure & Technical Debt
-- **Active Codebase (`creedbuilder/`):** The modern, active application is located exclusively within the `creedbuilder/` directory. It is a Node.js webhook bot and Vue 3 frontend for automated Solana trading via Jupiter API.
-- **Legacy Codebase (Root):** The root folder contains numerous legacy C# files (e.g., `Program.cs`, `Coin.cs`, `Global.cs`) and MongoDB schemas (`MongoDB_Schema/`). This is technical debt likely related to an old Coinbase bot project. **Do not modify or attempt to build the C# code** unless specifically instructed by the user to clean it up.
+## 1. Repository Structure
+- **Active Codebase:** The modern, active application is located in the root directory. It is a Node.js webhook bot and Vue 3 frontend for automated Solana trading via Jupiter API.
+- **Note:** The legacy C# codebase has been successfully removed in Phase 1 cleanup.
 
 ## 2. Build & Execution Commands
-When asked to build or run the active application, always work inside the `creedbuilder/` directory:
+When asked to build or run the active application, use the root directory:
 
 ```bash
 # To install dependencies
-cd creedbuilder && npm install
+npm install
 
 # To build the server and Vue GUI
-cd creedbuilder && npm run build
+npm run build
 
 # To run the development server
-cd creedbuilder && npm run dev
+npm run dev
 ```
 
-For full environment startup (Node bot + Cloudflared tunnel + Vue GUI proxy), the user utilizes the root scripts:
-- Windows: `.\Start.cmd`
+For full environment startup (Node bot + Cloudflared tunnel + Vue GUI proxy), the user utilizes the root script:
 - macOS/Linux: `./start.sh`
 
 ## 3. Important Context
-- Configuration and state are currently managed by reading/writing to `creedbuilder/.env`.
-- Ensure any new dependencies added are installed within `creedbuilder/package.json`.
+- Configuration and state are currently managed by reading/writing to `.env`.
+- Ensure any new dependencies added are installed within `package.json`.
 - Refer to `DOCUMENTATION.md` for a comprehensive breakdown of the application architecture, webhook flow, and next steps for the project.
 
 ## 4. Future Agent Development Phases
 To systematically improve the application and address existing technical debt, follow this phased layout when contributing:
 
-### Phase 1: Technical Debt Cleanup & Restructuring
+### Phase 1: Technical Debt Cleanup & Restructuring (COMPLETED)
 - **Goal:** Clean the workspace and centralize the modern application.
-- **Actions:**
-  1. Identify and delete all legacy C# files (e.g., `Program.cs`, `Coin.cs`, `MongoDB_Schema/`, etc.) located in the root directory.
-  2. Move the contents of the `creedbuilder/` directory (the active Node.js/Vue app) directly into the root repository folder.
-  3. Update any path references in `package.json`, `.gitignore`, `Install.cmd`, and `start.sh` to reflect the new structure.
+- **Actions:** Removed legacy C# codebase and centralized the Node.js/Vue app into the root repository.
 
 ### Phase 2: Infrastructure & Deployment Modernization
 - **Goal:** Improve deployment reliability and implement continuous integration.

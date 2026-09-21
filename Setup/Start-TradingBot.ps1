@@ -8,7 +8,7 @@ param()
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$BotDir = Join-Path $RepoRoot "creedbuilder"
+$BotDir = $RepoRoot
 $EnvFile = Join-Path $BotDir ".env"
 $LogDir = Join-Path $RepoRoot "Setup\logs"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
@@ -22,17 +22,11 @@ function Refresh-Path {
 Refresh-Path
 
 if (-not (Test-Path $EnvFile)) {
-    $legacyEnv = Join-Path $RepoRoot "solana-bot\.env"
-    if (Test-Path $legacyEnv) {
-        Copy-Item $legacyEnv $EnvFile
-        Write-Host "Migrated .env from solana-bot to creedbuilder"
-    } else {
-        throw "Missing creedbuilder\.env - run Install.cmd first."
-    }
+    throw "Missing .env - run Install.cmd first."
 }
 
 if (-not (Test-Path (Join-Path $BotDir "dist\index.js")) -or -not (Test-Path (Join-Path $BotDir "public\index.html"))) {
-    Write-Host "Building creedbuilder (server + Vue GUI)..." -ForegroundColor Cyan
+    Write-Host "Building bot (server + Vue GUI)..." -ForegroundColor Cyan
     Push-Location $BotDir
     try {
         npm run build

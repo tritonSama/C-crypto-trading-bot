@@ -5,7 +5,7 @@
 
 .DESCRIPTION
   Installs Node.js (if needed), cloudflared, npm deps, generates wallet + webhook
-  secret, writes creedbuilder/.env, and builds the bot.
+  secret, writes .env, and builds the bot.
 
 .EXAMPLE
   Right-click Install.cmd → Run as administrator
@@ -20,7 +20,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$BotDir = Join-Path $RepoRoot "creedbuilder"
+$BotDir = $RepoRoot
 $EnvFile = Join-Path $BotDir ".env"
 $EnvExample = Join-Path $BotDir ".env.example"
 
@@ -75,10 +75,6 @@ function Set-EnvValue([string]$Content, [string]$Key, [string]$Value) {
 Write-Host "creedBuilder one-click installer (TradingView + Jupiter / Solana)" -ForegroundColor Green
 Write-Host "Repo: $RepoRoot"
 
-if (-not (Test-Path $BotDir)) {
-    throw "Missing creedbuilder folder at $BotDir"
-}
-
 Ensure-Winget
 
 if (-not $SkipNode) {
@@ -120,12 +116,7 @@ finally {
     Pop-Location
 }
 
-Write-Step "Writing creedbuilder/.env"
-$legacyEnv = Join-Path $RepoRoot "solana-bot\.env"
-if (-not (Test-Path $EnvFile) -and (Test-Path $legacyEnv)) {
-    Copy-Item $legacyEnv $EnvFile
-    Write-Host "Migrated .env from solana-bot/ → creedbuilder/"
-}
+Write-Step "Writing .env"
 if (-not (Test-Path $EnvFile)) {
     Copy-Item $EnvExample $EnvFile
 }
@@ -189,7 +180,7 @@ Install complete.
 Wallet (fund with SOL on mainnet for live trades):
   $publicKey
 
-DRY_RUN=true (quotes only). Set DRY_RUN=false in creedbuilder\.env for live Jupiter swaps.
+DRY_RUN=true (quotes only). Set DRY_RUN=false in .env for live Jupiter swaps.
 
 Next (one click start):
   Double-click Start.cmd
